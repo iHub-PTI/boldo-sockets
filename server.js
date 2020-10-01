@@ -12,6 +12,10 @@ let rooms = {}
 app.use(express.json())
 
 io.on('connection', socket => {
+  socket.on('getWaitingRooms', () => {
+    io.to(socket.id).emit('waitingRooms', rooms)
+  })
+
   socket.on('disconnect', () => {
     for (room in rooms) {
       const foundIndex = rooms[room].findIndex(element => element == socket.id)
