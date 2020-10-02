@@ -8,11 +8,12 @@ const io = require('socket.io')(server)
 io.origins('*:*')
 
 let rooms = {}
-
+let doctorsListening = []
 app.use(express.json())
 
 io.on('connection', socket => {
-  socket.on('getWaitingRooms', () => {
+  socket.on('addDoctorListening', () => {
+    doctorsListening.push(socket.id)
     io.to(socket.id).emit('waitingRooms', rooms)
   })
 
@@ -22,6 +23,9 @@ io.on('connection', socket => {
       if (foundIndex != -1) {
         rooms[room].splice(foundIndex, 1)
         io.to(rooms[room][0]).emit('user disconnects')
+        for (let doctorListening of doctorsListening) {
+          io.to(doctorListening).emit('waitingRooms', rooms)
+        }
         break
       }
     }
@@ -42,6 +46,9 @@ io.on('connection', socket => {
       }
     } else {
       rooms[roomID] = [socket.id]
+      for (let doctorListening of doctorsListening) {
+        io.to(doctorListening).emit('waitingRooms', rooms)
+      }
     }
   })
   socket.on('offer', payload => {
