@@ -17,12 +17,13 @@ io.on('connection', socket => {
     io.to(socket.id).emit('waitingRooms', rooms)
   })
 
-  socket.on('disconnect', () => {
+  socket.on('end_call', () => {
     for (room in rooms) {
       const foundIndex = rooms[room].findIndex(element => element == socket.id)
       if (foundIndex != -1) {
         rooms[room].splice(foundIndex, 1)
-        io.to(rooms[room][0]).emit('user disconnects')
+        io.to(rooms[room][0]).emit('end_call')
+        delete rooms[room];
         for (let doctorListening of doctorsListening) {
           io.to(doctorListening).emit('waitingRooms', rooms)
         }
