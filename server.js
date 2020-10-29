@@ -7,61 +7,82 @@ const io = require('socket.io')(server)
 
 io.origins('*:*')
 
-let rooms = {}
-let doctorsListening = []
 app.use(express.json())
 
 io.on('connection', socket => {
-  socket.on('addDoctorListening', () => {
-    doctorsListening.push(socket.id)
-    io.to(socket.id).emit('waitingRooms', rooms)
+  console.log('connect')
+
+  socket.on('find patients', appointments => {
+    //TODO: validate doctor
+    //for every appointment join the room and emit an event.
+    appointments.forEach(appointmentId => {
+      socket.join('appointment:' + appointmentId, err => {
+        if (err) return console.log(err)
+        socket.to('appointment:' + appointmentId).emit('find patient')
+      })
+    })
   })
 
-  socket.on('end_call', () => {
-    for (room in rooms) {
-      const foundIndex = rooms[room].findIndex(element => element == socket.id)
-      if (foundIndex != -1) {
-        rooms[room].splice(foundIndex, 1)
-        io.to(rooms[room][0]).emit('end_call')
-        delete rooms[room];
-        for (let doctorListening of doctorsListening) {
-          io.to(doctorListening).emit('waitingRooms', rooms)
-        }
-        break
-      }
-    }
+  socket.on('patient ready', appointmentId => {
+    //TODO: validate patient
+    //add the patient to the appointment room.
+
+    socket.join('appointment:' + appointmentId, err => {
+      if (err) return console.log(err)
+      socket
+        .to('appointment:' + appointmentId)
+        .emit('patient ready', appointmentId)
+    })
   })
 
-  socket.on('start call', roomID => {
-    if (rooms[roomID]) {
-      rooms[roomID].push(socket.id)
-      if (rooms[roomID].length > 2) {
-        rooms[roomID] = []
-        rooms[roomID].push(socket.id)
-      } else if (rooms[roomID].length > 1) {
-        let hostID = rooms[roomID][0]
-        let partnerID = rooms[roomID][1]
+  socket.on('patient not ready', appointmentId => {
+    //TODO: validate patient
+    //remove the patient from the appointment room.
+    //broadcast patient not ready towards the doctor
 
-        io.to(hostID).emit('call partner', partnerID)
-        io.to(partnerID).emit('call host', hostID)
-      }
-    } else {
-      rooms[roomID] = [socket.id]
-      for (let doctorListening of doctorsListening) {
-        io.to(doctorListening).emit('waitingRooms', rooms)
-      }
-    }
+    socket.leave('appointment:' + appointmentId, err => {
+      if (err) return console.log(err)
+      socket
+        .to('appointment:' + appointmentId)
+        .emit('patient not ready', appointmentId)
+    })
+  })
+
+  socket.on('patient in call', appointmentId => {
+    //TODO: validate patient
+    //broadcast patient not ready towards the doctor
+
+    socket
+      .to('appointment:' + appointmentId)
+      .emit('patient not ready', appointmentId)
+  })
+
+  socket.on('end call', appointmentId => {
+    //TODO: validate patient/doctor
+    socket.to('appointment:' + appointmentId).emit('end call', appointmentId)
+  })
+
+  socket.on('start call', appointmentId => {
+    //TODO: validate patient/doctor
+    socket
+      .to('appointment:' + appointmentId)
+      .emit('call partner', appointmentId)
   })
   socket.on('offer', payload => {
-    io.to(payload.target).emit('offer', payload)
+    //TODO: validate patient/doctor
+    socket.to('appointment:' + payload.appointmentId).emit('offer', payload)
   })
 
   socket.on('answer', payload => {
-    io.to(payload.target).emit('answer', payload)
+    //TODO: validate patient/doctor
+    socket.to('appointment:' + payload.appointmentId).emit('answer', payload)
   })
 
-  socket.on('ice-candidate', incoming => {
-    io.to(incoming.target).emit('ice-candidate', incoming.candidate)
+  socket.on('ice-candidate', payload => {
+    //TODO: validate patient/doctor
+    socket
+      .to('appointment:' + payload.appointmentId)
+      .emit('ice-candidate', payload.candidate)
   })
 })
 
