@@ -10,15 +10,22 @@ io.origins('*:*')
 app.use(express.json())
 
 io.on('connection', socket => {
-  console.log('connect')
+  socket.on('disconnecting', () => {
+    //TODO: validate doctor / patient
+    let rooms = Object.keys(socket.rooms)
+
+    rooms.forEach(e => {
+      socket.to(e).emit('peer not ready', e)
+    })
+  })
 
   socket.on('find patients', appointments => {
     //TODO: validate doctor
     //for every appointment join the room and emit an event.
     appointments.forEach(appointmentId => {
-      socket.join('appointment:' + appointmentId, err => {
+      socket.join(appointmentId, err => {
         if (err) return console.log(err)
-        socket.to('appointment:' + appointmentId).emit('find patient')
+        socket.to(appointmentId).emit('find patient')
       })
     })
   })
@@ -26,63 +33,52 @@ io.on('connection', socket => {
   socket.on('patient ready', appointmentId => {
     //TODO: validate patient
     //add the patient to the appointment room.
-
-    socket.join('appointment:' + appointmentId, err => {
+    socket.join(appointmentId, err => {
       if (err) return console.log(err)
-      socket
-        .to('appointment:' + appointmentId)
-        .emit('patient ready', appointmentId)
+      socket.to(appointmentId).emit('patient ready', appointmentId)
     })
   })
 
-  socket.on('patient not ready', appointmentId => {
+  socket.on('peer not ready', appointmentId => {
     //TODO: validate patient
     //remove the patient from the appointment room.
-    //broadcast patient not ready towards the doctor
+    //broadcast peer not ready towards the doctor
 
-    socket.leave('appointment:' + appointmentId, err => {
+    socket.leave(appointmentId, err => {
       if (err) return console.log(err)
-      socket
-        .to('appointment:' + appointmentId)
-        .emit('patient not ready', appointmentId)
+      socket.to(appointmentId).emit('peer not ready', appointmentId)
     })
   })
 
   socket.on('patient in call', appointmentId => {
     //TODO: validate patient
-    //broadcast patient not ready towards the doctor
+    //broadcast peer not ready towards the doctor
 
-    socket
-      .to('appointment:' + appointmentId)
-      .emit('patient not ready', appointmentId)
+    socket.to(appointmentId).emit('peer not ready', appointmentId)
   })
 
   socket.on('end call', appointmentId => {
     //TODO: validate patient/doctor
-    socket.to('appointment:' + appointmentId).emit('end call', appointmentId)
+    socket.to(appointmentId).emit('end call', appointmentId)
   })
 
   socket.on('start call', appointmentId => {
     //TODO: validate patient/doctor
-    socket
-      .to('appointment:' + appointmentId)
-      .emit('call partner', appointmentId)
+    socket.to(appointmentId).emit('call partner', appointmentId)
   })
   socket.on('offer', payload => {
     //TODO: validate patient/doctor
-    socket.to('appointment:' + payload.appointmentId).emit('offer', payload)
+    socket.to(payload.appointmentId).emit('offer', payload)
   })
 
   socket.on('answer', payload => {
     //TODO: validate patient/doctor
-    socket.to('appointment:' + payload.appointmentId).emit('answer', payload)
+    socket.to(payload.appointmentId).emit('answer', payload)
   })
 
   socket.on('ice-candidate', payload => {
     //TODO: validate patient/doctor
-    socket
-      .to('appointment:' + payload.appointmentId)
-      .emit('ice-candidate', payload.candidate)
+    socket.to(payload.appointmentId).emit('ice-candidate', payload.candidate)
   })
 })
 
