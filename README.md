@@ -13,7 +13,17 @@ The sockets server facilitates realtime communication between web app and mobile
 
 2. Install dependencies: `npm i`
 
-3. `npm run dev` - to start server on [localhost:8000](http://localhost:8000)
+3. Create a `.env` with the following content:
+
+   ```
+   SECRET=someSecureString
+   ```
+
+4. `npm run dev` - to start server on [localhost:8000](http://localhost:8000)
+
+## Limitations
+
+This server does currently use local memory to store sockets and rooms. Therefore it is not possible to scale this server by adding more nodes. If that is needed, REDIS can be added as a socket storage.
 
 ## Contributing
 
