@@ -2,9 +2,8 @@ import 'dotenv/config'
 
 import http from 'http'
 import socketIO from 'socket.io'
-import crypto from 'crypto'
 
-const DEBUG = false
+const DEBUG = true
 
 const server = http.createServer()
 const io = socketIO(server)
@@ -15,6 +14,12 @@ io.use((_, next) => debugClients('BEFORE:', next))
 
 io.on('connection', socket => {
   debugClients('AFTER :')
+
+  if (DEBUG)
+    socket.use((packet, next) => {
+      console.log(`\n\n<<<<< #################  ${socket.id}  ################# >>>>>\n`, packet)
+      next()
+    })
 
   socket.on('disconnecting', () => {
     //TODO: validate doctor / patient
@@ -52,14 +57,20 @@ io.on('connection', socket => {
 
   // Once a call starts, signal patient as not ready
   // Patient stays in room for WebRTC Signaling
-  socket.on('patient in call', room => {
-    socket.to(room).emit('peer not ready', room)
+  socket.on('patient in call', room => socket.to(room).emit('peer not ready', room))
+
+  // Begin a Call
+  socket.on('ready?', room => {
+    socket.join(room)
+    socket.to(room).emit('ready?', room)
+  })
+  socket.on('ready!', room => {
+    socket.join(room)
+    socket.to(room).emit('ready!', room)
   })
 
   // End a call
-  socket.on('end call', room => {
-    socket.to(room).emit('end call', room)
-  })
+  socket.on('end call', room => socket.to(room).emit('end call', room))
 
   //
   // WebRTC Signaling
@@ -67,14 +78,11 @@ io.on('connection', socket => {
 
   socket.on('sdp offer', message => {
     socket.join(message.room)
-    const hash = crypto.createHmac('sha512', process.env.SECRET!).update(socket.id.slice(-8)).digest('hex')
-    socket.to(message.room).emit('sdp offer', { ...message, fingerprint: hash })
+    socket.to(message.room).emit('sdp offer', { ...message })
   })
 
   socket.on('ice candidate', message => {
-    const hash = crypto.createHmac('sha512', process.env.SECRET!).update(socket.id.slice(-8)).digest('hex')
-
-    socket.to(message.room).emit('ice candidate', { ...message, fingerprint: hash })
+    socket.to(message.room).emit('ice candidate', { ...message })
   })
 })
 
