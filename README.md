@@ -10,6 +10,8 @@ The sockets server facilitates realtime communication between web app and mobile
 1. This project has the following dependencies:
 
    - node.js (v12 or newer)
+   - Optional Dependency:
+     - Docker (v19 or newer) for building the image
 
 2. Install dependencies: `npm i`
 
@@ -20,6 +22,22 @@ The sockets server facilitates realtime communication between web app and mobile
    ```
 
 4. `npm run dev` - to start server on [localhost:8000](http://localhost:8000)
+
+## Run with docker
+
+To build the docker image use the following command:
+
+```
+docker build -t boldo-sockets .
+```
+
+Remember to set your `.env` file.
+
+ After that you can test it running the following command:
+
+```bash
+docker run --rm -it -p 8000:8000 boldo-sockets
+```
 
 ## Limitations
 

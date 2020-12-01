@@ -1,0 +1,7 @@
+Dockerfile
+.dockerignore
+.git
+##same as .gitignore but without the .env file
+
+node_modules/
+dist/
