@@ -18,7 +18,8 @@ The sockets server facilitates realtime communication between web app and mobile
 3. Create a `.env` with the following content:
 
    ```
-   SECRET=someSecureString
+   PUBLIC_KEY = RSA256 Public Key from boldo-server (e.g. `-----BEGIN PUBLIC KEY-----\nMI...`)
+   VERBOSE = true or false - to print connection logs
    ```
 
 4. `npm run dev` - to start server on [localhost:8000](http://localhost:8000)
@@ -33,7 +34,7 @@ docker build -t boldo-sockets .
 
 Remember to set your `.env` file.
 
- After that you can test it running the following command:
+After that you can test it running the following command:
 
 ```bash
 docker run --rm -it -p 8000:8000 boldo-sockets
