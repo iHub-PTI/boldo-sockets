@@ -8,8 +8,10 @@
     "dev": "nodemon -w src -e tsx,ts  -x ts-node -T --dir src ./server"
   },
   "dependencies": {
+    "@types/jsonwebtoken": "^8.5.0",
     "@types/socket.io": "^2.1.11",
     "dotenv": "^8.2.0",
+    "jsonwebtoken": "^8.5.1",
     "socket.io": "^2.3.0",
     "typescript": "^4.0.5"
   },

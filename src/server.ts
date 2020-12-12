@@ -3,10 +3,13 @@ import 'dotenv/config'
 import http from 'http'
 import socketIO from 'socket.io'
 
-const DEBUG = true
+import { debugClients, debugDisconnect, debugPayload } from './util/debug'
+import { verify, verifyRoomAccess } from './util/helpers'
+
+type roomAndToken = { room: string; token: string }
 
 const server = http.createServer()
-const io = socketIO(server)
+export const io = socketIO(server)
 
 io.origins('*:*')
 
@@ -14,84 +17,120 @@ io.use((_, next) => debugClients('BEFORE:', next))
 
 io.on('connection', socket => {
   debugClients('AFTER :')
-
-  if (DEBUG)
-    socket.use((packet, next) => {
-      console.log(`\n\n<<<<< #################  ${socket.id}  ################# >>>>>\n`, packet)
-      next()
-    })
+  debugPayload(socket)
 
   socket.on('disconnecting', () => {
-    //TODO: validate doctor / patient
     let rooms = Object.keys(socket.rooms)
+    rooms.forEach(e => socket.to(e).emit('peer not ready', e))
 
-    rooms.forEach(e => {
-      socket.to(e).emit('peer not ready', e)
-    })
-
-    if (DEBUG) console.log('disconnecting', socket.id)
+    debugDisconnect(socket)
   })
 
   //
   // PING: Show Ready Patients
   //
 
-  socket.on('find patients', (rooms: string[]) => {
-    rooms.forEach(room => {
-      socket.join(room)
-      socket.to(room).emit('find patient')
-    })
+  socket.on('find patients', async ({ rooms, token }: { rooms: string[]; token: string }) => {
+    try {
+      const veritas = verify(token, 'doctor')
+
+      for (const room of rooms) {
+        await verifyRoomAccess(room, socket, veritas.ids)
+
+        socket.to(room).emit('find patient')
+      }
+    } catch (err) {
+      console.log(err)
+    }
   })
 
-  socket.on('patient ready', room => {
-    socket.join(room)
-    socket.to(room).emit('patient ready', room)
-  })
+  socket.on('patient ready', async ({ room, token }: roomAndToken) => {
+    try {
+      const ver = verify(token, 'patient')
+      await verifyRoomAccess(room, socket, ver.ids)
 
-  // FIXME: Can this be removed?
-  // remove the patient from the appointment room
-  socket.on('peer not ready', room => {
-    socket.leave(room)
-    socket.to(room).emit('peer not ready', room)
+      socket.to(room).emit('patient ready', room)
+    } catch (err) {
+      console.log(err)
+    }
   })
 
   // Once a call starts, signal patient as not ready
   // Patient stays in room for WebRTC Signaling
-  socket.on('patient in call', room => socket.to(room).emit('peer not ready', room))
+  socket.on('patient in call', async ({ room, token }: roomAndToken) => {
+    try {
+      const ver = verify(token, 'patient')
+      await verifyRoomAccess(room, socket, ver.ids)
+
+      socket.to(room).emit('peer not ready', room)
+    } catch (err) {
+      console.log(err)
+    }
+  })
 
   // Begin a Call
-  socket.on('ready?', room => {
-    socket.join(room)
-    socket.to(room).emit('ready?', room)
+  socket.on('ready?', async ({ room, token }: roomAndToken) => {
+    try {
+      const veritas = verify(token, 'doctor')
+      await verifyRoomAccess(room, socket, veritas.ids)
+
+      socket.to(room).emit('ready?', room)
+    } catch (err) {
+      console.log(err)
+    }
   })
-  socket.on('ready!', room => {
-    socket.join(room)
-    socket.to(room).emit('ready!', room)
+
+  socket.on('ready!', async ({ room, token }: roomAndToken) => {
+    try {
+      const veritas = verify(token, 'doctor')
+      await verifyRoomAccess(room, socket, veritas.ids)
+
+      socket.to(room).emit('ready!', room)
+    } catch (err) {
+      console.log(err)
+    }
   })
 
   // End a call
-  socket.on('end call', room => socket.to(room).emit('end call', room))
+  socket.on('end call', async ({ room, token }: roomAndToken) => {
+    try {
+      const veritas = verify(token)
+      await verifyRoomAccess(room, socket, veritas.ids)
+
+      socket.to(room).emit('end call', room)
+    } catch (err) {
+      console.log(err)
+    }
+  })
 
   //
   // WebRTC Signaling
   //
 
-  socket.on('sdp offer', message => {
-    socket.join(message.room)
-    socket.to(message.room).emit('sdp offer', { ...message })
+  socket.on('sdp offer', async message => {
+    const { token, ...payload } = message
+    try {
+      const veritas = verify(token)
+      await verifyRoomAccess(payload.room, socket, veritas.ids)
+
+      socket.to(payload.room).emit('sdp offer', { ...payload })
+    } catch (err) {
+      console.log(err)
+    }
   })
 
-  socket.on('ice candidate', message => {
-    socket.to(message.room).emit('ice candidate', { ...message })
+  socket.on('ice candidate', async message => {
+    const { token, ...payload } = message
+    try {
+      const veritas = verify(token)
+      await verifyRoomAccess(payload.room, socket, veritas.ids)
+
+      socket.to(payload.room).emit('ice candidate', { ...payload })
+    } catch (err) {
+      console.log(err)
+    }
   })
 })
 
 const port = process.env.PORT || 8000
 server.listen(port, () => console.log(`server is running on port ${port}`))
-
-const debugClients = (msg: string, next?: () => void) => {
-  if (!DEBUG) return next?.()
-
-  io.clients((error: any, clients: any) => console.log(msg, clients))
-  next?.()
-}
