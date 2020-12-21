@@ -82,7 +82,7 @@ io.on('connection', socket => {
 
   socket.on('ready!', async ({ room, token }: roomAndToken) => {
     try {
-      const veritas = verify(token, 'doctor')
+      const veritas = verify(token, 'patient')
       await verifyRoomAccess(room, socket, veritas.ids)
 
       socket.to(room).emit('ready!', room)
