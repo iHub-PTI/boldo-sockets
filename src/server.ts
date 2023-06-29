@@ -1,5 +1,12 @@
 import 'dotenv/config'
 
+require('elastic-apm-node').start({
+  serviceName: 'boldo-socket',
+  secretToken: process.env.APM_SERVER_SECRET,
+  serverUrl: process.env.APM_SERVER_URL,
+  environment: process.env.APM_SERVER_ENVIRONMENT
+});
+
 import http from 'http'
 import socketIO from 'socket.io'
 
