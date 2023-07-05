@@ -26,7 +26,7 @@ io.use((_, next) => debugClients('BEFORE:', next))
 io.on('connection', socket => {
   debugClients('AFTER :')
   debugPayload(socket)
-  console.log({ event: 'connection', rooms: socket.rooms });
+  console.log(JSON.stringify({ event: 'connection', rooms: socket.rooms }));
   socket.on('disconnecting', () => {
     console.log({ event: 'disconnection', rooms: socket.rooms });
     let rooms = Object.keys(socket.rooms)
@@ -41,7 +41,7 @@ io.on('connection', socket => {
   socket.on('find patients', async ({ rooms, token }: { rooms: string[]; token: string }) => {
     try {
       const veritas = verify(token, 'doctor')
-      console.log({ event: 'find patients', rooms, token: veritas });
+      console.log(JSON.stringify({ event: 'find patients', rooms, token: veritas }));
       for (const room of rooms) {
         await verifyRoomAccess(room, socket, veritas.ids)
 
