@@ -28,7 +28,7 @@ io.on('connection', socket => {
   debugPayload(socket)
   console.log(JSON.stringify({ event: 'connection', rooms: socket.rooms }));
   socket.on('disconnecting', () => {
-    console.log({ event: 'disconnection', rooms: socket.rooms });
+    console.log(JSON.stringify({ event: 'disconnection', rooms: socket.rooms }));
     let rooms = Object.keys(socket.rooms)
     rooms.forEach(e => socket.to(e).emit('peer not ready', e))
     debugDisconnect(socket)
@@ -55,7 +55,7 @@ io.on('connection', socket => {
   socket.on('patient ready', async ({ room, token }: roomAndToken) => {
     try {
       const ver = verify(token, 'patient')
-      console.log({ event: 'patient ready', room, token: ver });
+      console.log(JSON.stringify({ event: 'patient ready', room, token: ver }));
       await verifyRoomAccess(room, socket, ver.ids)
 
       socket.to(room).emit('patient ready', room)
@@ -69,7 +69,7 @@ io.on('connection', socket => {
   socket.on('patient in call', async ({ room, token }: roomAndToken) => {
     try {
       const ver = verify(token, 'patient');
-      console.log({ event: 'patient in call', room, token: ver });
+      console.log(JSON.stringify({ event: 'patient in call', room, token: ver }));
       await verifyRoomAccess(room, socket, ver.ids);
       socket.to(room).emit('peer not ready', room)
     } catch (err) {
@@ -81,7 +81,7 @@ io.on('connection', socket => {
   socket.on('ready?', async ({ room, token }: roomAndToken) => {
     try {
       const veritas = verify(token, 'doctor');
-      console.log({ event: 'ready?', room, token: veritas });
+      console.log(JSON.stringify({ event: 'ready?', room, token: veritas }));
       await verifyRoomAccess(room, socket, veritas.ids);
       socket.to(room).emit('ready?', room)
     } catch (err) {
@@ -92,7 +92,7 @@ io.on('connection', socket => {
   socket.on('ready!', async ({ room, token }: roomAndToken) => {
     try {
       const veritas = verify(token, 'patient');
-      console.log({ event: 'ready!', room, token: veritas });
+      console.log(JSON.stringify({ event: 'ready!', room, token: veritas }));
       await verifyRoomAccess(room, socket, veritas.ids);
       socket.to(room).emit('ready!', room)
     } catch (err) {
@@ -104,7 +104,7 @@ io.on('connection', socket => {
   socket.on('end call', async ({ room, token }: roomAndToken) => {
     try {
       const veritas = verify(token);
-      console.log({ event: 'end call', room, token: veritas });
+      console.log(JSON.stringify({ event: 'end call', room, token: veritas }));
       await verifyRoomAccess(room, socket, veritas.ids);
       socket.to(room).emit('end call', room);
     } catch (err) {
@@ -120,7 +120,7 @@ io.on('connection', socket => {
     const { token, ...payload } = message
     try {
       const veritas = verify(token);
-      console.log({ event: 'sdp offer', room: payload.room, token: veritas });
+      console.log(JSON.stringify({ event: 'sdp offer', room: payload.room, token: veritas }));
       await verifyRoomAccess(payload.room, socket, veritas.ids);
       socket.to(payload.room).emit('sdp offer', { ...payload })
     } 
@@ -133,7 +133,7 @@ io.on('connection', socket => {
     const { token, ...payload } = message
     try {
       const veritas = verify(token);
-      console.log({ event: 'ice candidate', room: payload.room, token: veritas });
+      console.log(JSON.stringify({ event: 'ice candidate', room: payload.room, token: veritas }));
       await verifyRoomAccess(payload.room, socket, veritas.ids);
       socket.to(payload.room).emit('ice candidate', { ...payload })
     } 
