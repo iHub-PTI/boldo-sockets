@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import logger from "./util/logger";
+//import logger from "./util/logger";
 
 require('elastic-apm-node').start({
   serviceName: 'boldo-socket',
@@ -26,9 +26,9 @@ io.use((_, next) => debugClients('BEFORE:', next))
 io.on('connection', socket => {
   debugClients('AFTER :')
   debugPayload(socket)
-  logger.info({ event: 'connection', rooms: socket.rooms });
+  console.log({ event: 'connection', rooms: socket.rooms });
   socket.on('disconnecting', () => {
-    logger.info({ event: 'disconnection', rooms: socket.rooms });
+    console.log({ event: 'disconnection', rooms: socket.rooms });
     let rooms = Object.keys(socket.rooms)
     rooms.forEach(e => socket.to(e).emit('peer not ready', e))
     debugDisconnect(socket)
@@ -41,7 +41,7 @@ io.on('connection', socket => {
   socket.on('find patients', async ({ rooms, token }: { rooms: string[]; token: string }) => {
     try {
       const veritas = verify(token, 'doctor')
-      logger.info({ event: 'find patients', rooms, token: veritas });
+      console.log({ event: 'find patients', rooms, token: veritas });
       for (const room of rooms) {
         await verifyRoomAccess(room, socket, veritas.ids)
 
@@ -55,7 +55,7 @@ io.on('connection', socket => {
   socket.on('patient ready', async ({ room, token }: roomAndToken) => {
     try {
       const ver = verify(token, 'patient')
-      logger.info({ event: 'patient ready', room, token: ver });
+      console.log({ event: 'patient ready', room, token: ver });
       await verifyRoomAccess(room, socket, ver.ids)
 
       socket.to(room).emit('patient ready', room)
@@ -69,7 +69,7 @@ io.on('connection', socket => {
   socket.on('patient in call', async ({ room, token }: roomAndToken) => {
     try {
       const ver = verify(token, 'patient');
-      logger.info({ event: 'patient in call', room, token: ver });
+      console.log({ event: 'patient in call', room, token: ver });
       await verifyRoomAccess(room, socket, ver.ids);
       socket.to(room).emit('peer not ready', room)
     } catch (err) {
@@ -81,7 +81,7 @@ io.on('connection', socket => {
   socket.on('ready?', async ({ room, token }: roomAndToken) => {
     try {
       const veritas = verify(token, 'doctor');
-      logger.info({ event: 'ready?', room, token: veritas });
+      console.log({ event: 'ready?', room, token: veritas });
       await verifyRoomAccess(room, socket, veritas.ids);
       socket.to(room).emit('ready?', room)
     } catch (err) {
@@ -92,7 +92,7 @@ io.on('connection', socket => {
   socket.on('ready!', async ({ room, token }: roomAndToken) => {
     try {
       const veritas = verify(token, 'patient');
-      logger.info({ event: 'ready!', room, token: veritas });
+      console.log({ event: 'ready!', room, token: veritas });
       await verifyRoomAccess(room, socket, veritas.ids);
       socket.to(room).emit('ready!', room)
     } catch (err) {
@@ -104,7 +104,7 @@ io.on('connection', socket => {
   socket.on('end call', async ({ room, token }: roomAndToken) => {
     try {
       const veritas = verify(token);
-      logger.info({ event: 'end call', room, token: veritas });
+      console.log({ event: 'end call', room, token: veritas });
       await verifyRoomAccess(room, socket, veritas.ids);
       socket.to(room).emit('end call', room);
     } catch (err) {
@@ -120,7 +120,7 @@ io.on('connection', socket => {
     const { token, ...payload } = message
     try {
       const veritas = verify(token);
-      logger.info({ event: 'sdp offer', room: payload.room, token: veritas });
+      console.log({ event: 'sdp offer', room: payload.room, token: veritas });
       await verifyRoomAccess(payload.room, socket, veritas.ids);
       socket.to(payload.room).emit('sdp offer', { ...payload })
     } 
@@ -133,7 +133,7 @@ io.on('connection', socket => {
     const { token, ...payload } = message
     try {
       const veritas = verify(token);
-      logger.info({ event: 'ice candidate', room: payload.room, token: veritas });
+      console.log({ event: 'ice candidate', room: payload.room, token: veritas });
       await verifyRoomAccess(payload.room, socket, veritas.ids);
       socket.to(payload.room).emit('ice candidate', { ...payload })
     } 

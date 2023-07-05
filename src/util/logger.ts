@@ -1,3 +1,4 @@
+/*
 import log4js, { Configuration } from 'log4js';
 
 const log4jsConfig: Configuration = {
@@ -14,3 +15,4 @@ log4js.configure(log4jsConfig);
 const logger = log4js.getLogger();
 
 export default logger;
+*/
