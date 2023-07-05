@@ -26,9 +26,9 @@ io.use((_, next) => debugClients('BEFORE:', next))
 io.on('connection', socket => {
   debugClients('AFTER :')
   debugPayload(socket)
-  logger.info('conecction', socket);
+  logger.info({ event: 'connection', ...socket });
   socket.on('disconnecting', () => {
-    logger.info('disconnection', socket);
+    logger.info({ event: 'disconnection', ...socket });
     let rooms = Object.keys(socket.rooms)
     rooms.forEach(e => socket.to(e).emit('peer not ready', e))
     debugDisconnect(socket)
@@ -41,7 +41,7 @@ io.on('connection', socket => {
   socket.on('find patients', async ({ rooms, token }: { rooms: string[]; token: string }) => {
     try {
       const veritas = verify(token, 'doctor')
-      logger.info('find patients', { rooms, token });
+      logger.info({ event: 'find patients', rooms, token });
       for (const room of rooms) {
         await verifyRoomAccess(room, socket, veritas.ids)
 
@@ -54,7 +54,7 @@ io.on('connection', socket => {
 
   socket.on('patient ready', async ({ room, token }: roomAndToken) => {
     try {
-      logger.info('patient ready', { room, token });
+      logger.info({ event: 'patient ready', room, token });
       const ver = verify(token, 'patient')
       await verifyRoomAccess(room, socket, ver.ids)
 
@@ -68,7 +68,7 @@ io.on('connection', socket => {
   // Patient stays in room for WebRTC Signaling
   socket.on('patient in call', async ({ room, token }: roomAndToken) => {
     try {
-      logger.info('patient in call', { room, token });
+      logger.info({ event: 'patient in call', room, token });
       const ver = verify(token, 'patient')
       await verifyRoomAccess(room, socket, ver.ids)
 
@@ -81,7 +81,7 @@ io.on('connection', socket => {
   // Begin a Call
   socket.on('ready?', async ({ room, token }: roomAndToken) => {
     try {
-      logger.info('ready?', { room, token });
+      logger.info({ event: 'ready?', room, token });
       const veritas = verify(token, 'doctor')
       await verifyRoomAccess(room, socket, veritas.ids)
 
@@ -93,7 +93,7 @@ io.on('connection', socket => {
 
   socket.on('ready!', async ({ room, token }: roomAndToken) => {
     try {
-      logger.info('ready!', { room, token });
+      logger.info({ event: 'ready!', room, token });
       const veritas = verify(token, 'patient')
       await verifyRoomAccess(room, socket, veritas.ids)
 
@@ -106,7 +106,7 @@ io.on('connection', socket => {
   // End a call
   socket.on('end call', async ({ room, token }: roomAndToken) => {
     try {
-      logger.info('end call', { room, token });
+      logger.info({ event: 'end call', room, token });
       const veritas = verify(token)
       await verifyRoomAccess(room, socket, veritas.ids)
 
@@ -123,7 +123,7 @@ io.on('connection', socket => {
   socket.on('sdp offer', async message => {
     const { token, ...payload } = message
     try {
-      logger.info('sdp offer', message);
+      logger.info({ event: 'sdp offer', payload: message.payload, token: message.token });
       const veritas = verify(token)
       await verifyRoomAccess(payload.room, socket, veritas.ids)
 
@@ -136,7 +136,7 @@ io.on('connection', socket => {
   socket.on('ice candidate', async message => {
     const { token, ...payload } = message
     try {
-      logger.info('ice candidate', message);
+      logger.info({ event: 'ice candidate', payload: message.payload, token: message.token });
       const veritas = verify(token)
       await verifyRoomAccess(payload.room, socket, veritas.ids)
 
