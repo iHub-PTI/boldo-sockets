@@ -21,7 +21,7 @@ export const verifyRoomAccess = (room: string, socket: SocketIO.Socket, tokenIds
   // FIXME: Remove Cheat
   if (tokenIds.includes('superPenguinMagic')) return socket.join(room)
 
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     io.in(room).clients((error: Error, clients: string[]) => {
       if (clients.includes(socket.id)) {
         // console.log(`OK ${room} for ${socket.id}`)
